@@ -12,7 +12,7 @@ use Carbon\Carbon;
 class HotelController extends Controller
 {
     // ==========================================
-    // KODINGAN PUNYA E BROH ISAT 
+    // GET ALL ROOM TYPES
     // ==========================================
     public function getRooms()
     {
@@ -25,9 +25,13 @@ class HotelController extends Controller
         ], 200);
     }
 
+    // ==========================================
+    // CREATE RESERVATION
+    // ==========================================
     public function storeReservation(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'user_id'        => 'required|exists:users,id',
             'room_type_id'   => 'required|exists:room_types,id',
             'customer_name'  => 'required|string|max:255',
             'customer_email' => 'required|email|max:255',
@@ -44,18 +48,29 @@ class HotelController extends Controller
         }
 
         $room = RoomType::find($request->room_type_id);
-        $checkIn    = Carbon::parse($request->check_in);
-        $checkOut   = Carbon::parse($request->check_out);
-        $nights     = $checkIn->diffInDays($checkOut);
+
+        if (!$room) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Room tidak ditemukan'
+            ], 404);
+        }
+
+        $checkIn  = Carbon::parse($request->check_in);
+        $checkOut = Carbon::parse($request->check_out);
+
+        $nights = $checkIn->diffInDays($checkOut);
+
         $totalPrice = $nights * $room->price_per_night;
 
         $reservation = Reservation::create([
+            'user_id'        => $request->user_id,
             'room_type_id'   => $request->room_type_id,
             'customer_name'  => $request->customer_name,
             'customer_email' => $request->customer_email,
             'check_in'       => $request->check_in,
             'check_out'      => $request->check_out,
-            'total_price'    => $totalPrice,  
+            'total_price'    => $totalPrice,
         ]);
 
         return response()->json([
@@ -66,12 +81,12 @@ class HotelController extends Controller
     }
 
     // ==========================================
-    // TAMBAHAN API SESUAI LAPORAN LKPD (TUGAS PRABOWOkuyy)
+    // GET ALL RESERVATIONS
     // ==========================================
-
     public function getAllReservations()
     {
         $reservations = Reservation::all();
+
         return response()->json([
             'status'  => true,
             'message' => 'List reservasi',
@@ -79,10 +94,19 @@ class HotelController extends Controller
         ], 200);
     }
 
+    // ==========================================
+    // GET RESERVATION BY ID
+    // ==========================================
     public function getReservationById($id)
     {
         $reservation = Reservation::find($id);
-        if(!$reservation) return response()->json(['status' => false, 'message' => 'Data tidak ditemukan'], 404);
+
+        if (!$reservation) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Data tidak ditemukan'
+            ], 404);
+        }
 
         return response()->json([
             'status'  => true,
@@ -91,60 +115,42 @@ class HotelController extends Controller
         ], 200);
     }
 
-    public function checkAvailability(Request $request)
-    {
-        // Catatan buat broh Isat: Logika query ketersediaan kamar bisa diatur lebih lanjut di sini
-        return response()->json([
-            'status'  => true,
-            'message' => 'Kamar tersedia',
-            'data'    => [
-                [
-                    'room_id' => 101,
-                    'type'    => 'Single Room',
-                    'status'  => 'available'
-                ]
-            ]
-        ], 200);
-    }
-
+    // ==========================================
+    // GET USER RESERVATIONS
+    // ==========================================
     public function getUserReservations($user_id)
     {
-        // Catatan buat kang Isat: Ubah query ini sesuai relasi User ke Reservasi nantinya
         $reservations = Reservation::where('user_id', $user_id)->get();
+
+        if ($reservations->isEmpty()) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Reservasi tidak ditemukan'
+            ], 404);
+        }
+
         return response()->json([
             'status'  => true,
-            'message' => 'Reservasi user',
+            'message' => 'Reservasi user berhasil diambil',
             'data'    => $reservations
         ], 200);
     }
 
-    public function signup(Request $request)
-    {
-        // Catatan buat bro-kang Isat: Tambahkan logika insert User ke database di sini
-        return response()->json([
-            'status'  => true,
-            'message' => 'Registrasi berhasil',
-            'data'    => [
-                'name'  => $request->name,
-                'email' => $request->email
-            ]
-        ], 201);
-    }
-
-    public function login(Request $request)
-    {
-        // Catatan buat mas Isat: Tambahkan logika Auth/Sanctum di sini
-        return response()->json([
-            'status'  => true,
-            'message' => 'Login berhasil',
-            'token'   => 'abc123token'
-        ], 200);
-    }
-
+    // ==========================================
+    // DELETE RESERVATION
+    // ==========================================
     public function deleteReservation($id)
     {
         $reservation = Reservation::find($id);
-        if($reservation) $reservation->delete();
+
+        if (!$reservation) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Data tidak ditemukan'
+            ], 404);
+        }
+
+        $reservation->delete();
 
         return response()->json([
             'status'  => true,
@@ -152,19 +158,19 @@ class HotelController extends Controller
         ], 200);
     }
 
-    public function deleteUser($user_id)
-    {
-        // Catatan buat mas Isat: Tambahkan User::find($user_id)->delete()
-        return response()->json([
-            'status'  => true,
-            'message' => 'User berhasil dihapus'
-        ], 200);
-    }
-
+    // ==========================================
+    // UPDATE RESERVATION (PUT)
+    // ==========================================
     public function updateReservation(Request $request, $id)
     {
         $reservation = Reservation::find($id);
-        if(!$reservation) return response()->json(['status' => false, 'message' => 'Data tidak ditemukan'], 404);
+
+        if (!$reservation) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Data tidak ditemukan'
+            ], 404);
+        }
 
         $reservation->update($request->all());
 
@@ -175,12 +181,22 @@ class HotelController extends Controller
         ], 200);
     }
 
+    // ==========================================
+    // UPDATE RESERVATION (PATCH)
+    // ==========================================
     public function patchReservation(Request $request, $id)
     {
         $reservation = Reservation::find($id);
-        if(!$reservation) return response()->json(['status' => false, 'message' => 'Data tidak ditemukan'], 404);
 
-        $reservation->fill($request->all())->save();
+        if (!$reservation) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Data tidak ditemukan'
+            ], 404);
+        }
+
+        $reservation->fill($request->all());
+        $reservation->save();
 
         return response()->json([
             'status'  => true,

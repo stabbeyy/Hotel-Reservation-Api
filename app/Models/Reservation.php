@@ -6,9 +6,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class Reservation extends Model
 {
-    protected $fillable = ['room_type_id', 'customer_name', 'customer_email', 'check_in', 'check_out', 'total_price'];
+    protected $fillable = [
+        'user_id',
+        'room_type_id',
+        'customer_name',
+        'customer_email',
+        'check_in',
+        'check_out',
+        'total_price'
+    ];
 
-    public function roomType() {
+    // Relasi ke RoomType
+    public function roomType()
+    {
         return $this->belongsTo(RoomType::class);
     }
 }
