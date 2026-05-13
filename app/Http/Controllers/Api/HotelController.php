@@ -188,4 +188,15 @@ class HotelController extends Controller
             'data'    => $reservation
         ], 200);
     }
+
+    public function getLatestReservations()
+{
+    $reservations = Reservation::latest()->take(5)->get();
+
+    return response()->json([
+        'status'  => true,
+        'message' => 'List booking terbaru',
+        'data'    => $reservations
+    ], 200);
+}
 }

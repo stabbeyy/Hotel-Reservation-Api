@@ -48,3 +48,7 @@ Route::delete('/users/{user_id}', [HotelController::class, 'deleteUser']);
 // Endpoint: http://127.0.0.1:8000/api/reservations/{id}
 Route::put('/reservations/{id}', [HotelController::class, 'updateReservation']);
 Route::patch('/reservations/{id}', [HotelController::class, 'patchReservation']);
+
+// 12. Mengambil booking/reservasi terbaru
+// Endpoint: http://127.0.0.1:8000/api/reservations/latest
+Route::get('/reservations/latest', [HotelController::class, 'getLatestReservations']);
